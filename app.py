@@ -3,20 +3,29 @@ import pickle
 import pandas as pd
 
 # Load data using st.cache_data
-@st.cache_data()
+@st.cache_data
 def load_data():
-    movies_dict = pickle.load(open('movie_dict.pkl', 'rb'))
-    movies = pd.DataFrame(movies_dict)
-    similarity = pickle.load(open('similarity.pkl', 'rb'))
+    # Load only necessary columns to minimize memory usage
+    with open('movie_dict.pkl', 'rb') as f:
+        movies_dict = pickle.load(f)
+    movies = pd.DataFrame(movies_dict, columns=['movie_id', 'title'])
+    
+    with open('similarity.pkl', 'rb') as f:
+        similarity = pickle.load(f)
+        
     return movies, similarity
 
 # Function to recommend movies
 def recommend(movie, movies, similarity):
-    index = movies[movies['title'] == movie].index[0]
-    distances = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])
-    recommended_movie_names = []
-    for i in distances[1:6]:
-        recommended_movie_names.append(movies.iloc[i[0]].title)
+    try:
+        index = movies[movies['title'] == movie].index[0]
+    except IndexError:
+        return []
+    
+    # Get top 5 most similar movies
+    distances = sorted(list(enumerate(similarity[index])), reverse=True, key=lambda x: x[1])[1:6]
+    recommended_movie_names = [movies.iloc[i[0]].title for i in distances]
+    
     return recommended_movie_names
 
 # Main Streamlit app
@@ -33,8 +42,12 @@ def main():
 
     if st.button('Show Recommendation'):
         recommendations = recommend(selected_movie_name, movies, similarity)
-        for movie in recommendations:
-            st.write(movie)
+        if recommendations:
+            st.write("Recommendations:")
+            for movie in recommendations:
+                st.write(movie)
+        else:
+            st.write("No recommendations found.")
 
 if __name__ == "__main__":
     main()
