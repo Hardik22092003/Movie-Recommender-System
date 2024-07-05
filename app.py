@@ -2,8 +2,8 @@ import streamlit as st
 import pickle
 import pandas as pd
 
-# Load data and model only once using @st.cache
-@st.cache(allow_output_mutation=True)
+# Load data using st.cache_data
+@st.cache_data()
 def load_data():
     movies_dict = pickle.load(open('movie_dict.pkl', 'rb'))
     movies = pd.DataFrame(movies_dict)
